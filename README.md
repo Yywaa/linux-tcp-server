@@ -19,3 +19,7 @@ This project was built as part of my journey to learn and practice network progr
 - **Concurrent client handling** and thread-safe data structures
 - Basic **TCP message framing and demarcation**
 - Organized, modular C++ class design for network systems
+
+🏷️ Tags
+
+C++ Linux TCP POSIX Sockets Networking Multithreading Server
