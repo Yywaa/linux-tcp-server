@@ -1,0 +1,98 @@
+# =====================================
+#  Linux + VSCode + C/C++ TCP/IP Project
+# =====================================
+
+# === Build artifacts ===
+*.o
+*.a
+*.so
+*.out
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+*.exe
+
+# === Build directories ===
+build/
+Build/
+bin/
+obj/
+output/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# === VSCode ===
+.vscode/
+.history/
+*.code-workspace
+
+# === Temporary / log files ===
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.old
+core
+vgcore.*       # Valgrind core dumps
+*.orig
+
+# === OS-specific files ===
+.DS_Store
+Thumbs.db
+
+# === Dependency managers (e.g. vcpkg) ===
+vcpkg_installed/
+.vcpkg-root
+
+# === Documentation output (e.g. Doxygen) ===
+/docs/html/
+/docs/latex/
+
+# === Runtime-generated files (sockets, logs, etc.) ===
+/logs/
+/tmp/
+/run/
+valgrind/
+*.pid
+*.sock
+
+# === IDE / Editor project files ===
+.idea/
+*.user
+*.workspace
+*.pro.user
+*.cbp
+*.layout
+
+# === Other ===
+*.pyc
+__pycache__/
+
+# ---- Dependency or generated files ----
+*.d
+*.dep
+
+# ---- Backup files ----
+*~
+*.orig
+*.rej
+
+# ---- CMake (if used later) ----
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.in
+install_manifest.txt
+
+# ---- Misc ----
+tags
+*.tag
+
+# ---- Explicitly keep Makefile ----
+!Makefile
