@@ -26,7 +26,8 @@ static void appln_client_disconnected(const TcpServerController *tcp_server, con
 
 static void appln_client_msg_recvd(const TcpServerController *tcp_server, const TcpClient *tcp_client, unsigned char *msg, uint16_t msg_size)
 {
-    printf("%s() Bytes recved: %d\n", __FUNCTION__, msg_size);
+    printf("first printf msg: %s\n", msg);
+    printf("%s() Bytes recved: %d msg:%s \n", __FUNCTION__, msg_size, msg);
 }
 
 int main(int argc, char **argv)

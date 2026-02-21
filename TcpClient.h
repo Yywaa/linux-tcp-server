@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include "TcpServerController.h"
 class TcpServerController;
+class TcpMsgDemarcar;
 
+#define MAX_CLIENT_BUFFER_SIZE 8192
 class TcpClient
 {
 private:
@@ -13,6 +15,7 @@ public:
     uint16_t port_no;
     int comm_fd;
     TcpServerController *tcp_ctrlr;
+    TcpMsgDemarcar *msgd;
     TcpClient(uint32_t ip_addr, uint16_t port_no);
     void Display();
 };

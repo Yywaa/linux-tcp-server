@@ -9,6 +9,7 @@ TcpClientDbManager::TcpClientDbManager(TcpServerController *tcp_ctrlr)
 
 TcpClientDbManager::~TcpClientDbManager()
 {
+    pthread_rwlock_destroy(&this->rwlock);
 }
 
 void TcpClientDbManager::StartTcpClientDbMgrInit()

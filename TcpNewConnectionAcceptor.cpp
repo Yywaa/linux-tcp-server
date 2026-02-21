@@ -5,6 +5,8 @@
 #include "TcpServerController.h"
 #include "network_utils.h"
 #include "TcpClient.h"
+#include "TcpMsgDemarcar.h"
+#include "TcpMsgFixedSizeDemarcar.h"
 
 TcpNewConnectionAcceptor::TcpNewConnectionAcceptor(TcpServerController *tcp_ctrlr)
 {
@@ -77,6 +79,7 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         {
             this->tcp_ctrlr->client_connected(this->tcp_ctrlr, tcp_client);
         }
+        tcp_client->msgd = new TcpMsgFixedSizeDemarcar(27);
 
         /*Tell the TCP Controller to further process the Client*/
         this->tcp_ctrlr->ProcessNewClient(tcp_client);
