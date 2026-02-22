@@ -21,7 +21,7 @@ void TcpClientDbManager::AddClienttoDb(TcpClient *tcp_client)
 {
     // this->tcp_client_db.emplace_back(tcp_client);
     tcp_client_db.emplace_back(tcp_client);
-    printf("new client added to DB manager\n");
+    // printf("new client added to DB manager\n");
 }
 
 void TcpClientDbManager::DisplayClientDb()

@@ -76,6 +76,7 @@ void setup_tcp_communicatiom()
         /* step 5 : send the data to server */
         sent_recv_bytes = sendto(sockfd, msg1, len1, 0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
         printf("No of bytes sent = %d\n", sent_recv_bytes);
+        usleep(1000);
 
         sent_recv_bytes = sendto(sockfd, msg2, len2, 0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
         printf("No of bytes sent = %d\n", sent_recv_bytes);

@@ -28,6 +28,19 @@ uint16_t BCBAvailableSize(ByteCircularBuffer_t *bcb)
 
 uint16_t BCBWrite(ByteCircularBuffer_t *bcb, unsigned char *data, uint16_t data_size)
 {
+    if (data_size > (bcb->buffer_size - bcb->current_size))
+    {
+        return 0;
+    }
+    for (int i = 0; i < data_size; i++)
+    {
+        bcb->buffer[bcb->front] = data[i];
+        bcb->front = (bcb->front + 1) % bcb->buffer_size;
+    }
+    bcb->current_size += data_size;
+    return data_size;
+
+    /*
     if (BCBIsFull(bcb))
     {
         return 0;
@@ -35,7 +48,8 @@ uint16_t BCBWrite(ByteCircularBuffer_t *bcb, unsigned char *data, uint16_t data_
     if (BCBAvailableSize(bcb) < data_size)
     {
         return 0;
-    }
+    }*/
+    /*
     if (bcb->front < bcb->rear)
     {
         memcpy(BCB(bcb, bcb->front), data, data_size);
@@ -63,11 +77,30 @@ uint16_t BCBWrite(ByteCircularBuffer_t *bcb, unsigned char *data, uint16_t data_
     memcpy(BCB(bcb, 0), data + leading_space, data_size - leading_space);
     bcb->front = data_size - leading_space;
     bcb->current_size += data_size;
-    return data_size;
+    return data_size;*/
 }
 
 uint16_t BCBRead(ByteCircularBuffer_t *bcb, unsigned char *buffer, uint16_t data_size, bool remove_read_bytes)
 {
+    if (data_size > bcb->current_size)
+    {
+        return 0;
+    }
+    for (int i = 0; i < data_size; i++)
+    {
+        buffer[i] = bcb->buffer[bcb->rear];
+        if (remove_read_bytes)
+        {
+            bcb->rear = (bcb->rear + 1) % bcb->buffer_size;
+        }
+    }
+    if (remove_read_bytes)
+    {
+        bcb->current_size -= data_size;
+    }
+    return data_size;
+
+    /*
     if (bcb->current_size < data_size)
     {
         return 0;
@@ -109,7 +142,7 @@ uint16_t BCBRead(ByteCircularBuffer_t *bcb, unsigned char *buffer, uint16_t data
         bcb->rear = (data_size - leading_space);
         bcb->current_size -= data_size;
     }
-    return data_size;
+    return data_size;*/
 }
 
 bool BCBIsFull(ByteCircularBuffer_t *bcb)

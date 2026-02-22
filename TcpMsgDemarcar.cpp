@@ -39,25 +39,15 @@ void TcpMsgDemarcar::Destroy()
 }
 void TcpMsgDemarcar::ProcessMsg(TcpClient *tcp_client, unsigned char *msg_recvd, uint16_t msg_size)
 {
-    // assert(BCBWrite(tcp_client->msgd->bcb, msg_recvd, msg_size));
-    bool ok = BCBWrite(tcp_client->msgd->bcb, msg_recvd, msg_size);
-    if (!ok)
+    uint16_t written = BCBWrite(this->bcb, msg_recvd, msg_size);
+    // assert(BCBWrite(this->bcb, msg_recvd, msg_size));
+    if (written != msg_size)
     {
-        fprintf(stderr,
-                "BCBWrite FAILED: msg_size=%u buffer_size=%u current=%u front=%u rear=%u\n",
-                msg_size, this->bcb->buffer_size, this->bcb->current_size, this->bcb->front, this->bcb->rear);
-    }
-
-    if (this->bcb->current_size > this->bcb->buffer_size)
-    {
-        fprintf(stderr, "BCB CORRUPT: current_size > buffer_size\n");
-    }
-    if (this->bcb->front >= this->bcb->buffer_size || this->bcb->rear >= this->bcb->buffer_size)
-    {
-        fprintf(stderr, "BCB CORRUPT: front/rear out of range\n");
-    }
-    if (!this->IsBufferReadyToFlush())
-    {
+        printf("RingBuffer Full! dropping data. "
+               "current_size =%u capacity=%u incoming=%u\n",
+               this->bcb
+                   ->current_size,
+               this->bcb->buffer_size, msg_size);
         return;
     }
     this->ProcessClientMsg(tcp_client);

@@ -35,6 +35,8 @@ void TcpMsgFixedSizeDemarcar::ProcessClientMsg(TcpClient *tcp_client)
     }
     while (bytes_read = BCBRead(this->bcb, this->buffer, this->msg_fixed_size, true))
     {
+        // printf("bytes_read = %u\n", bytes_read);
+        this->buffer[bytes_read] = '\0';
         tcp_client->tcp_ctrlr->client_msg_recvd(tcp_client->tcp_ctrlr, tcp_client, this->buffer, bytes_read);
     }
 }

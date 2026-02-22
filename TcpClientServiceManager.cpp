@@ -43,14 +43,23 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 
         for (it = this->tcp_client_db.begin(), tcp_client = *it; it != this->tcp_client_db.end(); tcp_client = next_tcp_client)
         {
-            next_tcp_client = *(++it);
+            // next_tcp_client = *(++it);
             if (FD_ISSET(tcp_client->comm_fd, &this->active_fd_set))
             {
                 rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, MAX_CLIENT_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
                 if (rcv_bytes == 0)
                 {
+                    /*from gpt*/
+                    printf("Client closed connection\n");
+
+                    close(tcp_client->comm_fd);
+                    FD_CLR(tcp_client->comm_fd, &this->backup_fd_set);
+                    it = this->tcp_client_db.erase(it);
+                    continue;
+                    /*original*/
+                    /*
                     printf("error = %dn", errno);
-                    sleep(1);
+                    sleep(1);*/
                 }
                 if (tcp_client->msgd)
                 {
@@ -61,6 +70,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                     this->tcp_ctrlr->client_msg_recvd(this->tcp_ctrlr, tcp_client, client_recv_buffer, rcv_bytes);
                 }
             }
+            next_tcp_client = *(++it);
         }
     }
 }
@@ -80,7 +90,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThread()
     pthread_attr_init(&attr);
     pthread_create(this->client_svc_mgr_thread, &attr,
                    tcp_client_svc_manager_thread_fn, (void *)this);
-    printf("Service started:TcpClientServiceManagerThread\n");
+    // printf("Service started:TcpClientServiceManagerThread\n");
 }
 
 void TcpClientServiceManager::StopTcpClientServiceManagerThread()
@@ -121,12 +131,12 @@ void TcpClientServiceManager::CopyClientFDtoFDSet(fd_set *fdset)
 void TcpClientServiceManager::AddClientToDB(TcpClient *tcp_client)
 {
     this->tcp_client_db.push_back(tcp_client);
-    printf("new client added to CAS data base\n");
+    // printf("new client added to CAS data base\n");
 }
 void TcpClientServiceManager::ClientFDStartListen(TcpClient *tcp_client)
 {
-    this->StopTcpClientServiceManagerThread();
-    printf("CLient Svc Mgr Thread is cancelled\n");
+    // this->StopTcpClientServiceManagerThread();
+    // printf("CLient Svc Mgr Thread is cancelled\n");
 
     this->AddClientToDB(tcp_client);
 
