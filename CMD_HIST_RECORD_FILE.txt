@@ -1,0 +1,45 @@
+.
+config console name Tcp-project
+.
+.
+conf tcp-s bb
+.
+conf tcp-server s1
+conf tcp-s s1 start
+conf tcp-server s1
+conf tcp-s s1 start
+conf tcp-server s
+conf tcp-s s start
+conf tcp-server s1
+conf tcp-s s1 start
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-server s1
+conf tcp-s s1 start
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-server s1
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-server s1
+conf tcp-server s1 start
+conf tcp-s s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+config tcp-server s2
+config tcp-server s2 start
+config tcp-server s1
+config tcp-server 1 start
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s2 127.0.0.1 41000
+confi tcp-server s2 start
+config tcp-server s1 127.0.0.1 36000
+conf tcp-server s1 start

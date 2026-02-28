@@ -84,8 +84,8 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         /*Tell the TCP Controller to further process the Client*/
         this->tcp_ctrlr->ProcessNewClient(tcp_client);
 
-        // printf("Connection Acceptted from Client[%s,%d]\n", network_convert_ip_n_to_p(htonl(client_addr.sin_addr.s_addr), 0),
-        //      htons(client_addr.sin_port));
+        printf("Connection Acceptted from Client[%s,%d]\n", network_convert_ip_n_to_p(htonl(client_addr.sin_addr.s_addr), 0),
+               htons(client_addr.sin_port));
     }
 }
 

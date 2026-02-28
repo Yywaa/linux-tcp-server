@@ -90,7 +90,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThread()
     pthread_attr_init(&attr);
     pthread_create(this->client_svc_mgr_thread, &attr,
                    tcp_client_svc_manager_thread_fn, (void *)this);
-    // printf("Service started:TcpClientServiceManagerThread\n");
+    printf("Service started:TcpClientServiceManagerThread\n");
 }
 
 void TcpClientServiceManager::StopTcpClientServiceManagerThread()
