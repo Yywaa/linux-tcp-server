@@ -6,8 +6,11 @@
 #include "CommandParser/cmdtlv.h"
 
 #define TCP_SERVER_CREATE 1
-#define TCP_SERVER_STRAT 2
-
+#define TCP_SERVER_START 2
+#define TCP_SERVER_SHOW_TCP_SERVER 3
+#define TCP_SERVER_STOP_CONN_ACCEPT 4
+#define TCP_SERVER_STOP_CLIENT_LISTEN 5
+#define TCP_SERVER_STOP 6
 std::list<TcpServerController *> tcp_server_lst;
 
 static void appln_client_connected(const TcpServerController *tcp_server, const TcpClient *tcp_client);
@@ -74,7 +77,7 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
         tcp_server_lst.push_back(tcp_server);
         tcp_server->SetServerNotifCallbacks(appln_client_connected, appln_client_disconnected, appln_client_msg_recvd);
         break;
-    case TCP_SERVER_STRAT:
+    case TCP_SERVER_START:
         // printf("IInd cli invoker\n");
         /*config tcp-server<server name>start*/
         tcp_server = TcpServer_lookup(std::string(server_name));
@@ -84,8 +87,66 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
             return -1;
         }
         tcp_server->Start();
-
         break;
+    case TCP_SERVER_STOP_CONN_ACCEPT:
+        tcp_server = TcpServer_lookup(std::string(server_name));
+        if (!tcp_server)
+        {
+            printf("Error: Tcp Server do not Exist\n");
+            return -1;
+        }
+        switch (enable_or_disable)
+        {
+        case CONFIG_ENABLE:
+            tcp_server->StopConnectionAcceptingSvc();
+            printf("Stop accepting new connetions\n");
+            break;
+        case CONFIG_DISABLE:
+            tcp_server->StartConectionAcceptionSvc();
+            break;
+        default:
+            break;
+        }
+        break;
+    case TCP_SERVER_STOP_CLIENT_LISTEN:
+        tcp_server = TcpServer_lookup(std::string(server_name));
+        if (!tcp_server)
+        {
+            printf("Error : Tcp Server do not exist\n");
+            return -1;
+        }
+        switch (enable_or_disable)
+        {
+        case CONFIG_ENABLE:
+            /* code */
+            printf("Stop listening on new client\n");
+            tcp_server->StopClientSvcMgr();
+            break;
+        case CONFIG_DISABLE:
+            tcp_server->StartClientSvcMgr();
+            break;
+        default:
+            break;
+        }
+        break;
+    case TCP_SERVER_STOP:
+        tcp_server = TcpServer_lookup(std::string(server_name));
+        if (!tcp_server)
+        {
+            printf("Error: Tcp Server do not Exist\n");
+        }
+        switch (enable_or_disable)
+        {
+        case CONFIG_ENABLE:
+            /* code */
+            tcp_server->Stop();
+            break;
+        case CONFIG_DISABLE:
+            printf("Command Negation is not support for this CLI\n");
+
+        default:
+            break;
+        }
 
     default:
         break;
@@ -130,28 +191,85 @@ static void appln_client_msg_recvd(const TcpServerController *tcp_server, const 
     printf("\n");
     */
 }
-
-static void tcp_build_config_cli_tree()
+static int show_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enable_disable)
 {
-    /*config tcp_cli_tree*/
+    int cmd_code;
+    char *server_name = NULL;
+    tlv_struct *tlv = NULL;
+    TcpServerController *tcp_server = NULL;
+    cmd_code = EXTRACT_CMD_CODE(ser_buff);
+    TLV_LOOP_BEGIN(ser_buff, tlv)
+    {
+        if (strncmp(tlv->leaf_id, "tcp-server-name", strlen("tcp-server-name")) == 0)
+        {
+            server_name = tlv->value;
+        }
+    }
+    TLV_LOOP_END;
+    switch (cmd_code)
+    {
+    case TCP_SERVER_SHOW_TCP_SERVER:
+        /* code */
+        tcp_server = TcpServer_lookup(std::string(server_name));
+        if (!tcp_server)
+        {
+            printf("Error: Tcp Server do not Exist\n");
+            return -1;
+        }
+        tcp_server->Display();
+        break;
+
+    default:
+        break;
+    }
+    return 0;
+}
+
+static void
+tcp_build_config_cli_tree()
+{
+
+    /* config tcp-server <name> */
     param_t *config_hook = libcli_get_config_hook();
     {
-        /*config tcp-server*/
+        /* config tcp-server ...*/
         static param_t tcp_server;
         init_param(&tcp_server, CMD, "tcp-server", NULL, NULL, INVALID, NULL, "config tcp-server");
         libcli_register_param(config_hook, &tcp_server);
         {
-            /*config tcp-server<name>*/
+            /* config tcp-server <name> */
             static param_t tcp_server_name;
             init_param(&tcp_server_name, LEAF, NULL, config_tcp_server_handler, NULL, STRING, "tcp-server-name", "Tcp Server Name");
             libcli_register_param(&tcp_server, &tcp_server_name);
             set_param_cmd_code(&tcp_server_name, TCP_SERVER_CREATE);
-            { /*config tcp-server<name>[<ip_addr>]...*/
+            {
+                /* config tcp-server <name> [no] disable-conn-accept */
+                static param_t dis_conn_accept;
+                init_param(&dis_conn_accept, CMD, "disable-conn-accept", config_tcp_server_handler, 0, INVALID, 0, "Connection Accept Settings");
+                libcli_register_param(&tcp_server_name, &dis_conn_accept);
+                set_param_cmd_code(&dis_conn_accept, TCP_SERVER_STOP_CONN_ACCEPT);
+            }
+            {
+                /* config tcp-server <name> [no] disable-client-listen */
+                static param_t disable_client_listen;
+                init_param(&disable_client_listen, CMD, "disable-client-listen", config_tcp_server_handler, 0, INVALID, 0, "Listening  Settings");
+                libcli_register_param(&tcp_server_name, &disable_client_listen);
+                set_param_cmd_code(&disable_client_listen, TCP_SERVER_STOP_CLIENT_LISTEN);
+            }
+            {
+                /* config tcp-server <name> stop */
+                static param_t stop;
+                init_param(&stop, CMD, "stop", config_tcp_server_handler, 0, INVALID, 0, "Stop TCP Server");
+                libcli_register_param(&tcp_server_name, &stop);
+                set_param_cmd_code(&stop, TCP_SERVER_STOP);
+            }
+            {
+                /* config tcp-server <name> [<ip-addr>] ...*/
                 static param_t tcp_server_addr;
                 init_param(&tcp_server_addr, LEAF, 0, NULL, NULL, IPV4, "tcp-server-addr", "Tcp Server Address");
                 libcli_register_param(&tcp_server_name, &tcp_server_addr);
                 {
-                    /*config tcp-server<name>[<ip_addr>][<port-no>]*/
+                    /* config tcp-server <name> [<ip-addr>] [<port-no>]*/
                     static param_t tcp_server_port;
                     init_param(&tcp_server_port, LEAF, 0, config_tcp_server_handler, 0, INT, "tcp-server-port", "Tcp Server Port Number");
                     libcli_register_param(&tcp_server_addr, &tcp_server_port);
@@ -159,18 +277,33 @@ static void tcp_build_config_cli_tree()
                 }
             }
             {
-                /*config tcp-server<name>start*/
+                /* config tcp-server <name> start */
                 static param_t start;
                 init_param(&start, CMD, "start", config_tcp_server_handler, NULL, INVALID, NULL, "Start");
                 libcli_register_param(&tcp_server_name, &start);
-                set_param_cmd_code(&start, TCP_SERVER_STRAT);
+                set_param_cmd_code(&start, TCP_SERVER_START);
             }
+            support_cmd_negation(&tcp_server_name);
+            /* do not add any param_t here */
         }
     }
+    support_cmd_negation(config_hook);
 }
 static void tcp_build_show_cli_tree()
 {
     param_t *show_hook = libcli_get_show_hook();
+
+    /*show tcp-server ...*/
+    static param_t tcp_server;
+    init_param(&tcp_server, CMD, "tcp-server", NULL, NULL, INVALID, NULL, "show tcp-server");
+    libcli_register_param(show_hook, &tcp_server);
+    {
+        /*show tcp-server <name>*/
+        static param_t tcp_server_name;
+        init_param(&tcp_server_name, LEAF, NULL, show_tcp_server_handler, NULL, STRING, "tcp-server-name", "Tcp Server Name");
+        libcli_register_param(&tcp_server, &tcp_server_name);
+        set_param_cmd_code(&tcp_server_name, TCP_SERVER_SHOW_TCP_SERVER);
+    }
 }
 static void tcp_build_cli()
 {

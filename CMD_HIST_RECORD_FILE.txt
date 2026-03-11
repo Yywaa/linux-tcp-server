@@ -43,3 +43,99 @@ config tcp-server s2 127.0.0.1 41000
 confi tcp-server s2 start
 config tcp-server s1 127.0.0.1 36000
 conf tcp-server s1 start
+?
+conf tcp-s s1
+?
+?
+config tcp-server s1 $ ?
+?
+cd
+?
+config tcp-s s1 /
+?
+cd 
+config tcp-s s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-server s1
+config tcp-s s1 start
+show tcp-s s1
+show tcp-s s1
+config tcp-server s1
+config tcp-server start
+show tcp-s s1
+config tcp-s s1 start
+show tcp-s s1
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+.
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-s s1
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-server s1
+config tcp-server s1
+config tcp-server s1 start
+show tcp-server s1
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-server s1
+config tcp-s s1 start
+show tcp-s s1
+config tcp-s s1 disable-client-listen
+config tcp-s s1
+config tcp-s s1 start
+config tcp-s s1
+config tcp-s s1 start
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-s s1
+config tcp-s s1
+config tcp-s start
+show tcp-s s1
+config tcp-server s1 start
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-server s1
+config tcp-s s1 start
+show tcp-s s1
+config tcp-s s1 disable-client-listen
+show tcp-s s1
+config tcp-s s1
+config tcp-s s1 start
+show tcp-s s1
+config tcp-s s1 disable-client-listen
+show tcp-s s1\
+show tcp-s s1

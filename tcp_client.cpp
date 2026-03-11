@@ -132,7 +132,7 @@ PROMPT_USER:
 
     printf("Result recvd = %u\n", result.c);
 #endif
-    /*Step 7: Client would want to send the data again to the server, go into infinite loop*/
+    /*Step 7: Client would want to send the data again to the servappln_client_msg_recvder, go into infinite loop*/
     goto PROMPT_USER;
 }
 

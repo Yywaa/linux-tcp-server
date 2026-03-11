@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <unistd.h>
+#include <cassert>
 #include "TcpServerController.h"
 #include "TcpClientServiceManager.h"
 #include "TcpClient.h"
@@ -142,4 +143,20 @@ void TcpClientServiceManager::ClientFDStartListen(TcpClient *tcp_client)
 
     this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
     this->StartTcpClientServiceManagerThread();
+}
+
+void TcpClientServiceManager::Stop()
+{
+    this->StopTcpClientServiceManagerThread();
+    std::list<TcpClient *>::iterator it;
+    TcpClient *tcp_client, *next_tcp_client;
+
+    /*this assumes Svc mgr thread is already cancelled, no need to lock anaything*/
+    assert(this->client_svc_mgr_thread == NULL);
+    for (it = this->tcp_client_db.begin(), tcp_client = *it; it != this->tcp_client_db.end(); tcp_client = next_tcp_client)
+    {
+        next_tcp_client = *(++it);
+        this->tcp_client_db.remove(tcp_client);
+    }
+    delete this;
 }
