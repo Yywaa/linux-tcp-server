@@ -139,3 +139,59 @@ show tcp-s s1
 config tcp-s s1 disable-client-listen
 show tcp-s s1\
 show tcp-s s1
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s1
+config  tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s1 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+show tcp-s s1
+config tcp-s s1
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s2 127.0.0.1 35000
+config  tcp-s s1 start
+config tcp-s s2 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+show tcp-s s2
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s2 127.0.0.1 35000
+config tcp-s s2 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+show tcp-s s2
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s2 127.0.0.1 35000
+config tcp-s s1 start
+config tcp-s s2 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+config tcp-s s1 127.0.0.1 30000
+config tcp-s s1 start
+config tcp-s s2 127.0.0.1 35000
+config tcp-s s2 start
+config tcp-s s1 connect 127.0.0.1 35000
+show tcp-s s1
+show tcp-s s2

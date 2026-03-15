@@ -77,6 +77,8 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         tcp_client->server_port_no = this->tcp_ctrlr->port_no;
         tcp_client->tcp_ctrlr = this->tcp_ctrlr;
         tcp_client->comm_fd = comm_sock_fd;
+        tcp_client->SetState(TCP_CLIENT_STATE_PASSIVE_OPENER);
+        tcp_client->SetState(TCP_CLIENT_STATE_CONNECTED);
 
         // this->tcp_ctrlr->client_connected(this->tcp_ctrlr, tcp_client); // CAS will notify application a new connection is connected
         if (this->tcp_ctrlr->client_connected)

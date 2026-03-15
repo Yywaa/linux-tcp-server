@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g 
+CFLAGS=-g -O0
 #CXX = g++
 #CXXFLAGS = -Wall -g -std=c++17
 TARGET:testapp.exe

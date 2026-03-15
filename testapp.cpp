@@ -11,6 +11,7 @@
 #define TCP_SERVER_STOP_CONN_ACCEPT 4
 #define TCP_SERVER_STOP_CLIENT_LISTEN 5
 #define TCP_SERVER_STOP 6
+#define TCP_SERVER_CONNECT_REMOTE 7
 std::list<TcpServerController *> tcp_server_lst;
 
 static void appln_client_connected(const TcpServerController *tcp_server, const TcpClient *tcp_client);
@@ -42,6 +43,8 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
     TcpServerController *tcp_server = NULL;
     char *ip_addr = (char *)default_ip_addr;
     uint16_t port_no = default_port_no;
+    const char *remote_ip_addr = NULL;
+    uint16_t remote_port = 0;
 
     cmd_code = EXTRACT_CMD_CODE(ser_buff);
 
@@ -58,6 +61,14 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
         else if (strncmp(tlv->leaf_id, "tcp-server-port", strlen("tcp-server-port")) == 0)
         {
             port_no = atoi(tlv->value);
+        }
+        else if (strncmp(tlv->leaf_id, "remote-addr", strlen("remote-addr")) == 0)
+        {
+            remote_ip_addr = tlv->value;
+        }
+        else if (strncmp(tlv->leaf_id, "remote-port", strlen("remote-port")) == 0)
+        {
+            remote_port = atoi(tlv->value);
         }
     }
     TLV_LOOP_END
@@ -134,6 +145,7 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
         if (!tcp_server)
         {
             printf("Error: Tcp Server do not Exist\n");
+            return -1;
         }
         switch (enable_or_disable)
         {
@@ -143,6 +155,25 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
             break;
         case CONFIG_DISABLE:
             printf("Command Negation is not support for this CLI\n");
+            return -1;
+        }
+        break;
+    case TCP_SERVER_CONNECT_REMOTE:
+        tcp_server = TcpServer_lookup(std::string(server_name));
+        if (!tcp_server)
+        {
+            printf("Error : Tcp Server do not Exist\n");
+            return -1;
+        }
+        switch (enable_or_disable)
+        {
+        case CONFIG_ENABLE:
+            /* code */
+
+            // tcp_server->CreateActiveAClient(network_convert_ip_p_to_n(remote_ip_addr), remote_port);
+            tcp_server->CreateActiveAClient(network_convert_ip_p_to_n(remote_ip_addr), remote_port);
+            break;
+        case CONFIG_DISABLE:
 
         default:
             break;
@@ -197,12 +228,33 @@ static int show_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode
     char *server_name = NULL;
     tlv_struct *tlv = NULL;
     TcpServerController *tcp_server = NULL;
+    char *ip_addr = (char *)default_ip_addr;
+    uint16_t port_no = default_port_no;
+    const char *remote_ip_addr = NULL;
+    uint16_t remote_port = 0;
+
     cmd_code = EXTRACT_CMD_CODE(ser_buff);
     TLV_LOOP_BEGIN(ser_buff, tlv)
     {
         if (strncmp(tlv->leaf_id, "tcp-server-name", strlen("tcp-server-name")) == 0)
         {
             server_name = tlv->value;
+        }
+        else if (strncmp(tlv->leaf_id, "tcp-server-addr", strlen("tcp-server-addr")) == 0)
+        {
+            ip_addr = tlv->value;
+        }
+        else if (strncmp(tlv->leaf_id, "tcp-server-port", strlen("tcp-server-port")) == 0)
+        {
+            port_no = atoi(tlv->value);
+        }
+        else if (strncmp(tlv->leaf_id, "remote-addr", strlen("remote-addr")) == 0)
+        {
+            remote_ip_addr = tlv->value;
+        }
+        else if (strncmp(tlv->leaf_id, "remote-port", strlen("remote-port")) == 0)
+        {
+            remote_port = atoi(tlv->value);
         }
     }
     TLV_LOOP_END;
@@ -282,6 +334,22 @@ tcp_build_config_cli_tree()
                 init_param(&start, CMD, "start", config_tcp_server_handler, NULL, INVALID, NULL, "Start");
                 libcli_register_param(&tcp_server_name, &start);
                 set_param_cmd_code(&start, TCP_SERVER_START);
+            }
+            {
+                static param_t connect;
+                init_param(&connect, CMD, "connect", 0, 0, INVALID, 0, "connect tcp-server");
+                libcli_register_param(&tcp_server_name, &connect);
+                {
+                    static param_t remote_machine_addr;
+                    init_param(&remote_machine_addr, LEAF, 0, 0, 0, IPV4, "remote-addr", "Remote IPV4 address");
+                    libcli_register_param(&connect, &remote_machine_addr);
+                    {
+                        static param_t remote_machine_port;
+                        init_param(&remote_machine_port, LEAF, 0, config_tcp_server_handler, 0, INT, "remote-port", "Remote Port Number");
+                        libcli_register_param(&remote_machine_addr, &remote_machine_port);
+                        set_param_cmd_code(&remote_machine_port, TCP_SERVER_CONNECT_REMOTE);
+                    }
+                }
             }
             support_cmd_negation(&tcp_server_name);
             /* do not add any param_t here */
