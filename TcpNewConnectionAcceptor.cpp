@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <unistd.h>
 #include "TcpNewConnectionAcceptor.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -5,6 +7,8 @@
 #include "TcpServerController.h"
 #include "network_utils.h"
 #include "TcpClient.h"
+#include "TcpMsgDemarcar.h"
+#include "TcpMsgFixedSizeDemarcar.h"
 
 TcpNewConnectionAcceptor::TcpNewConnectionAcceptor(TcpServerController *tcp_ctrlr)
 {
@@ -69,14 +73,19 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
             continue;
         }
         TcpClient *tcp_client = new TcpClient(client_addr.sin_addr.s_addr, client_addr.sin_port);
+        tcp_client->server_ip_addr = this->tcp_ctrlr->ip_addr;
+        tcp_client->server_port_no = this->tcp_ctrlr->port_no;
         tcp_client->tcp_ctrlr = this->tcp_ctrlr;
         tcp_client->comm_fd = comm_sock_fd;
+        tcp_client->SetState(TCP_CLIENT_STATE_PASSIVE_OPENER);
+        tcp_client->SetState(TCP_CLIENT_STATE_CONNECTED);
 
         // this->tcp_ctrlr->client_connected(this->tcp_ctrlr, tcp_client); // CAS will notify application a new connection is connected
         if (this->tcp_ctrlr->client_connected)
         {
             this->tcp_ctrlr->client_connected(this->tcp_ctrlr, tcp_client);
         }
+        tcp_client->msgd = new TcpMsgFixedSizeDemarcar(27);
 
         /*Tell the TCP Controller to further process the Client*/
         this->tcp_ctrlr->ProcessNewClient(tcp_client);
@@ -106,4 +115,27 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThread()
         exit(0);
     }
     printf("Service Started:TcpNewConnectionAcceptorThread\n");
+}
+void TcpNewConnectionAcceptor::StopTcpNewConnectionAcceptorThread()
+{
+    if (!this->accept_new_conn_thread)
+    {
+        return;
+    }
+    pthread_cancel(*this->accept_new_conn_thread);
+    /*wait until the thread is cancelled successfully*/
+    pthread_join(*this->accept_new_conn_thread, NULL);
+    free(this->accept_new_conn_thread);
+    this->accept_new_conn_thread = NULL;
+}
+
+void TcpNewConnectionAcceptor::Stop()
+{
+    // 1,Stop the CAS thread if running
+    // 2,Release the resource (accept id)
+    // 3,delete this instance of CAS
+    this->StopTcpNewConnectionAcceptorThread();
+    close(this->accept_fd);
+    this->accept_fd = 0;
+    delete this;
 }

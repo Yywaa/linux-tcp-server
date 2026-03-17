@@ -25,6 +25,7 @@ public:
     void StartTcpClientServiceManagerThreadInternal();
     void StopTcpClientServiceManagerThread();
     void AddClientToDB(TcpClient *);
+    void Stop();
 };
 
 #endif

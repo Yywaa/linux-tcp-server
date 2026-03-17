@@ -24,6 +24,9 @@ public:
     ~TcpNewConnectionAcceptor();
     void StartTcpConnectionAcceptorThread();
     void StartTcpConnectionAcceptorThreadInternal();
+
+    void Stop();
+    void StopTcpNewConnectionAcceptorThread();
 };
 
 #endif

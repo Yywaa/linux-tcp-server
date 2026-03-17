@@ -2,12 +2,13 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <unistd.h>
+#include <cassert>
 #include "TcpServerController.h"
 #include "TcpClientServiceManager.h"
 #include "TcpClient.h"
 
-#define TCP_CLIENT_RECV_BUFFER_SIZE 1024
-unsigned char client_recv_buffer[TCP_CLIENT_RECV_BUFFER_SIZE];
+unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
 
 TcpClientServiceManager::TcpClientServiceManager(TcpServerController *tcp_ctrlr)
 {
@@ -43,15 +44,34 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 
         for (it = this->tcp_client_db.begin(), tcp_client = *it; it != this->tcp_client_db.end(); tcp_client = next_tcp_client)
         {
-            next_tcp_client = *(++it);
+            // next_tcp_client = *(++it);
             if (FD_ISSET(tcp_client->comm_fd, &this->active_fd_set))
             {
-                rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, TCP_CLIENT_RECV_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
-                if (this->tcp_ctrlr->client_msg_recvd)
+                rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, MAX_CLIENT_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
+                if (rcv_bytes == 0)
+                {
+                    /*from gpt*/
+                    printf("Client closed connection\n");
+
+                    close(tcp_client->comm_fd);
+                    FD_CLR(tcp_client->comm_fd, &this->backup_fd_set);
+                    it = this->tcp_client_db.erase(it);
+                    continue;
+                    /*original*/
+                    /*
+                    printf("error = %dn", errno);
+                    sleep(1);*/
+                }
+                if (tcp_client->msgd)
+                {
+                    tcp_client->msgd->ProcessMsg(tcp_client, client_recv_buffer, rcv_bytes);
+                }
+                else if (this->tcp_ctrlr->client_msg_recvd)
                 {
                     this->tcp_ctrlr->client_msg_recvd(this->tcp_ctrlr, tcp_client, client_recv_buffer, rcv_bytes);
                 }
             }
+            next_tcp_client = *(++it);
         }
     }
 }
@@ -112,15 +132,31 @@ void TcpClientServiceManager::CopyClientFDtoFDSet(fd_set *fdset)
 void TcpClientServiceManager::AddClientToDB(TcpClient *tcp_client)
 {
     this->tcp_client_db.push_back(tcp_client);
-    printf("new client added to CAS data base\n");
+    // printf("new client added to CAS data base\n");
 }
 void TcpClientServiceManager::ClientFDStartListen(TcpClient *tcp_client)
 {
-    this->StopTcpClientServiceManagerThread();
-    printf("CLient Svc Mgr Thread is cancelled\n");
+    // this->StopTcpClientServiceManagerThread();
+    // printf("CLient Svc Mgr Thread is cancelled\n");
 
     this->AddClientToDB(tcp_client);
 
     this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
     this->StartTcpClientServiceManagerThread();
+}
+
+void TcpClientServiceManager::Stop()
+{
+    this->StopTcpClientServiceManagerThread();
+    std::list<TcpClient *>::iterator it;
+    TcpClient *tcp_client, *next_tcp_client;
+
+    /*this assumes Svc mgr thread is already cancelled, no need to lock anaything*/
+    assert(this->client_svc_mgr_thread == NULL);
+    for (it = this->tcp_client_db.begin(), tcp_client = *it; it != this->tcp_client_db.end(); tcp_client = next_tcp_client)
+    {
+        next_tcp_client = *(++it);
+        this->tcp_client_db.remove(tcp_client);
+    }
+    delete this;
 }

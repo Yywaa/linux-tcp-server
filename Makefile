@@ -1,17 +1,20 @@
 CC=g++
-CFLAGS=-g
+CFLAGS=-g -O0
 #CXX = g++
 #CXXFLAGS = -Wall -g -std=c++17
 TARGET:testapp.exe
-LIBS=-lpthread
+LIBS=-lpthread -LCommandParser -lcli -lrt
 OBJS=TcpClientDBManager.o 		 		\
 			TcpClientServiceManager.o 		 \
 			TcpNewConnectionAcceptor.o 	 \
 			TcpServerController.o 				  \
 			network_utils.o					\
-			TcpClient.o			
+			TcpClient.o						\
+			TcpMsgDemarcar.o				\
+			ByteCircularBuffer.o			\
+			TcpMsgFixedSizeDemarcar.o
 
-testapp.exe:testapp.o ${OBJS}
+testapp.exe:testapp.o ${OBJS} CommandParser/libcli.a
 	${CC} ${CFLAGS} ${OBJS} testapp.o -o testapp.exe ${LIBS}
 
 testapp.o:testapp.cpp
@@ -35,6 +38,18 @@ network_utils.o:network_utils.cpp
 TcpClient.o:TcpClient.cpp
 	${CC} ${CFLAGS} -c TcpClient.cpp -o TcpClient.o
 
+ByteCircularBuffer.o:ByteCircularBuffer.cpp
+	${CC} ${CFLAGS} -c ByteCircularBuffer.cpp -o ByteCircularBuffer.o
+
+TcpMsgDemarcar.o:TcpMsgDemarcar.cpp
+	${CC} ${CFLAGS} -c TcpMsgDemarcar.cpp -o TcpMsgDemarcar.o
+
+TcpMsgFixedSizeDemarcar.o:TcpMsgFixedSizeDemarcar.cpp
+	${CC} ${CFLAGS} -c TcpMsgFixedSizeDemarcar.cpp -o TcpMsgFixedSizeDemarcar.o
+
+CommandParser/libcli.a:
+	(cd CommandParser;make)
 clean:
 	rm -f *.o
 	rm -f *exe
+	(cd CommandParser;make clean)

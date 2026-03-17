@@ -9,6 +9,7 @@ TcpClientDbManager::TcpClientDbManager(TcpServerController *tcp_ctrlr)
 
 TcpClientDbManager::~TcpClientDbManager()
 {
+    pthread_rwlock_destroy(&this->rwlock);
 }
 
 void TcpClientDbManager::StartTcpClientDbMgrInit()
@@ -20,7 +21,7 @@ void TcpClientDbManager::AddClienttoDb(TcpClient *tcp_client)
 {
     // this->tcp_client_db.emplace_back(tcp_client);
     tcp_client_db.emplace_back(tcp_client);
-    printf("new client added to DB manager\n");
+    // printf("new client added to DB manager\n");
 }
 
 void TcpClientDbManager::DisplayClientDb()
@@ -33,4 +34,18 @@ void TcpClientDbManager::DisplayClientDb()
         tcp_client = *it;
         tcp_client->Display();
     }
+}
+
+void TcpClientDbManager::Purge()
+{
+    std::list<TcpClient *>::iterator it;
+    TcpClient *tcp_client, *next_tcp_client;
+    pthread_rwlock_wrlock(&this->rwlock);
+    for (it = this->tcp_client_db.begin(), tcp_client = *it; it != this->tcp_client_db.end(); tcp_client = next_tcp_client)
+    {
+        next_tcp_client = *(++it);
+        this->tcp_client_db.remove(tcp_client);
+        tcp_client->Abort();
+    }
+    pthread_rwlock_unlock(&this->rwlock);
 }
