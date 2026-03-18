@@ -169,11 +169,11 @@ void TcpServerController::StopClientSvcMgr()
   this->tcp_client_svc_mgr = NULL;
 }
 void TcpServerController::StartClientSvcMgr() {}
-void TcpServerController::CopyAllClientsTolist(std::list<TcpClient *> *list) {}
+// void TcpServerController::CopyAllClientsTolist(std::list<TcpClient *> *list) {}
 
 void TcpServerController::Stop()
 {
-  TcpClient *tcp_client;
+  // TcpClient *tcp_client;
   if (this->tcp_new_conn_acc)
   {
     this->StopConnectionAcceptingSvc();

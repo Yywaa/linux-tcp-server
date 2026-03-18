@@ -37,11 +37,12 @@ static TcpServerController *TcpServer_lookup(std::string tcp_server_name)
 
 int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enable_or_disable)
 {
+    param = NULL;
     int cmd_code;
     const char *server_name = NULL;
     tlv_struct *tlv = NULL;
     TcpServerController *tcp_server = NULL;
-    char *ip_addr = (char *)default_ip_addr;
+    const char *ip_addr = (char *)default_ip_addr;
     uint16_t port_no = default_port_no;
     const char *remote_ip_addr = NULL;
     uint16_t remote_port = 0;
@@ -153,9 +154,15 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
             /* code */
             tcp_server->Stop();
             break;
+        case OPERATIONAL:
+            break;
+        case MODE_UNKNOWN:
+            break;
         case CONFIG_DISABLE:
             printf("Command Negation is not support for this CLI\n");
             return -1;
+        default:
+            break;
         }
         break;
     case TCP_SERVER_CONNECT_REMOTE:
@@ -174,6 +181,8 @@ int config_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enab
             tcp_server->CreateActiveAClient(network_convert_ip_p_to_n(remote_ip_addr), remote_port);
             break;
         case CONFIG_DISABLE:
+        case MODE_UNKNOWN:
+            break;
 
         default:
             break;
@@ -198,6 +207,8 @@ static void print_server(const TcpServerController *tcp_server)
 
 static void appln_client_connected(const TcpServerController *tcp_server, const TcpClient *tcp_client)
 {
+    (void)tcp_server;
+    (void)tcp_client;
     print_server(tcp_server);
     printf("Appln:Client Connected:");
     print_client(tcp_client);
@@ -205,10 +216,18 @@ static void appln_client_connected(const TcpServerController *tcp_server, const 
 
 static void appln_client_disconnected(const TcpServerController *tcp_server, const TcpClient *tcp_client)
 {
+    (void)tcp_server;
+    (void)tcp_client;
+
+    print_server(tcp_server);
+    printf("Appln:CLient Disconnect:");
+    print_client(tcp_client);
 }
 
 static void appln_client_msg_recvd(const TcpServerController *tcp_server, const TcpClient *tcp_client, unsigned char *msg, uint16_t msg_size)
 {
+    (void)tcp_server;
+    (void)tcp_client;
     // printf("first printf msg: %s\n", msg);
     // fwrite(msg, 1, msg_size, stdout);
     printf("%s() Bytes recved: %d msg:%s \n", __FUNCTION__, msg_size, msg);

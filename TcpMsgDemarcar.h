@@ -30,7 +30,7 @@ public:
     /*Constructor*/
     TcpMsgDemarcar(uint16_t circular_buffer_len);
     TcpMsgDemarcar();
-    ~TcpMsgDemarcar();
+    virtual ~TcpMsgDemarcar();
 
     void Destroy();
     void ProcessMsg(TcpClient *, unsigned char *mgs_recvd, uint16_t mgs_size);
