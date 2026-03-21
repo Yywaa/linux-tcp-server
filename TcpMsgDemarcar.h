@@ -33,7 +33,7 @@ public:
     virtual ~TcpMsgDemarcar();
 
     void Destroy();
-    void ProcessMsg(TcpClient *, unsigned char *mgs_recvd, uint16_t mgs_size);
+    void ProcessMsg(TcpClient *, const unsigned char *mgs_recvd, uint16_t mgs_size);
 };
 
 #endif

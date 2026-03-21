@@ -37,7 +37,7 @@ void TcpMsgDemarcar::Destroy()
         this->buffer = NULL;
     }
 }
-void TcpMsgDemarcar::ProcessMsg(TcpClient *tcp_client, unsigned char *msg_recvd, uint16_t msg_size)
+void TcpMsgDemarcar::ProcessMsg(TcpClient *tcp_client, const unsigned char *msg_recvd, uint16_t msg_size)
 {
     uint16_t written = BCBWrite(this->bcb, msg_recvd, msg_size);
     // assert(BCBWrite(this->bcb, msg_recvd, msg_size));

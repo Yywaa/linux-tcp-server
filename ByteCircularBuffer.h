@@ -3,14 +3,18 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct ByteCircularBuffer_
 {
     unsigned char *buffer;
     uint16_t buffer_size;
-    uint16_t front;
-    uint16_t rear;
+
+    uint16_t front; // write index
+    uint16_t rear;  // read index
+
     uint16_t current_size;
+    pthread_mutex_t lock;
 } ByteCircularBuffer_t;
 
 #define BCB(_bcb, n) (&_bcb->buffer[n])
@@ -18,7 +22,7 @@ typedef struct ByteCircularBuffer_
 ByteCircularBuffer_t *BCBCreateNew(uint16_t size);
 
 void BCBFree(ByteCircularBuffer_t *bcb);
-uint16_t BCBWrite(ByteCircularBuffer_t *bcb, unsigned char *data, uint16_t data_szie);
+uint16_t BCBWrite(ByteCircularBuffer_t *bcb, const unsigned char *data, uint16_t data_szie);
 
 uint16_t BCBRead(ByteCircularBuffer_t *bcb, unsigned char *buffer, uint16_t data_size, bool remove_read_bytes);
 
