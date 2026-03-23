@@ -408,7 +408,8 @@ int main(int argc, char **argv)
     server1->SetServerNotifCallbacks(appln_client_connected, appln_client_disconnected, appln_client_msg_recvd);
     scanf("\n");
     server1->Display();
-#endif
+// #endif
+#else if 1
     init_libcli();
     tcp_build_cli();
 
@@ -416,4 +417,5 @@ int main(int argc, char **argv)
 
     /*code never touch here*/
     return 0;
+#endif
 }

@@ -140,13 +140,13 @@ void TcpServerController::UnSetBit(uint32_t bit)
 }
 void TcpServerController::StartConectionAcceptionSvc()
 {
-  if (this->IsBitSet(TCP_SERVER_NOT_ACCEPTING_NEW_CONNECTIONS))
+  if (!this->IsBitSet(TCP_SERVER_NOT_ACCEPTING_NEW_CONNECTIONS))
   {
     return;
   }
   this->UnSetBit(TCP_SERVER_NOT_ACCEPTING_NEW_CONNECTIONS);
   this->tcp_new_conn_acc = new TcpNewConnectionAcceptor(this);
-  this->tcp_new_conn_acc->StopTcpNewConnectionAcceptorThread();
+  this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
 }
 void TcpServerController::StopConnectionAcceptingSvc()
 {

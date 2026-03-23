@@ -9,8 +9,8 @@ private:
     uint16_t msg_fixed_size;
 
 public:
-    bool IsBufferReadyToFlush();
-    void ProcessClientMsg(TcpClient *);
+    bool IsBufferReadyToFlush() override;
+    void ProcessClientMsg(TcpClient *) override;
 
     /*Constructor*/
     TcpMsgFixedSizeDemarcar(uint16_t fixed_size);

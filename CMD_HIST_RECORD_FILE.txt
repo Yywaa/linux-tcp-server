@@ -195,3 +195,18 @@ config tcp-s s2 start
 config tcp-s s1 connect 127.0.0.1 35000
 show tcp-s s1
 show tcp-s s2
+config tcp-s s1
+config tcp-s s1 start
+show tcp-s s1
+config tcp-s s1 disable-conn-accept
+show tcp-s s1
+config tcp-s s1 no disable-conn-accept
+show tcp-s s1
+config tcp-s s1
+config tcp-s s1 start
+show tcp-s s1
+config tcp-s s1 disable-conn-accept
+show tcp-s s1
+config tcp-s no disable-conn-accept
+config tcp-s s1 no disable-conn-accept
+show tcp-s s1
