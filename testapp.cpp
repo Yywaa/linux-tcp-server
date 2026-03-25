@@ -400,7 +400,7 @@ static void tcp_build_cli()
 
 int main(int argc, char **argv)
 {
-#if 0
+#if 1
 
     TcpServerController *server1 = new TcpServerController("127.0.0.1", 40000, "Default TCP Server");
 
@@ -409,7 +409,7 @@ int main(int argc, char **argv)
     scanf("\n");
     server1->Display();
 // #endif
-#else if 1
+#else if
     init_libcli();
     tcp_build_cli();
 

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define DEFAULT_CBC_SIZE (1024)
+#define DEFAULT_CBC_SIZE (8192)
 
 typedef enum TcpMsgDemarcarType
 {

@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include "TcpMsgVariabSizeDemarcar.h"
 
 class TcpServerController;
 class TcpNewConnectionAcceptor;

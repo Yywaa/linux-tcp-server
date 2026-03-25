@@ -10,6 +10,8 @@
 #include "TcpMsgDemarcar.h"
 #include "TcpMsgFixedSizeDemarcar.h"
 
+#define FIX_SIZE_DEMAR 0
+
 TcpNewConnectionAcceptor::TcpNewConnectionAcceptor(TcpServerController *tcp_ctrlr)
 {
     this->accept_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -85,7 +87,11 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         {
             this->tcp_ctrlr->client_connected(this->tcp_ctrlr, tcp_client);
         }
+#if FIX_SIZE_DEMAR
         tcp_client->msgd = new TcpMsgFixedSizeDemarcar(27);
+#else
+        tcp_client->msgd = new TcpMsgVariabSizeDemarcar();
+#endif
 
         /*Tell the TCP Controller to further process the Client*/
         this->tcp_ctrlr->ProcessNewClient(tcp_client);
