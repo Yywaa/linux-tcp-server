@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define DEFAULT_CBC_SIZE (8192)
+#define DEFAULT_CBC_SIZE (256)
 
 typedef enum TcpMsgDemarcarType
 {
@@ -19,7 +19,7 @@ class TcpClient;
 class TcpMsgDemarcar
 {
 private:
-protected:
+public:
     ByteCircularBuffer_ *bcb;
     unsigned char *buffer;
 
@@ -34,6 +34,7 @@ public:
 
     void Destroy();
     void ProcessMsg(TcpClient *, const unsigned char *mgs_recvd, uint16_t mgs_size);
+    bool CanAcceptMoreData();
 };
 
 #endif

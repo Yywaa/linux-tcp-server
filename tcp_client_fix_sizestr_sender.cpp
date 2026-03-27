@@ -111,7 +111,7 @@ void setup_tcp_communicatiom()
 #elif VARIAB_SIZE_DEMAR
 
         send_msg(sockfd, (const unsigned char *)msg, strlen(msg));
-        usleep(100);
+        // usleep(100);
 #endif
     }
 }

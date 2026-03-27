@@ -39,16 +39,31 @@ void TcpMsgDemarcar::Destroy()
 }
 void TcpMsgDemarcar::ProcessMsg(TcpClient *tcp_client, const unsigned char *msg_recvd, uint16_t msg_size)
 {
-    uint16_t written = BCBWrite(this->bcb, msg_recvd, msg_size);
-    // assert(BCBWrite(this->bcb, msg_recvd, msg_size));
-    if (written != msg_size)
+    // printf("Buffer size = %u\n", this->bcb->current_size);
+    uint16_t remaining = msg_size;
+    const unsigned char *ptr = msg_recvd;
+    while (remaining > 0)
     {
-        printf("RingBuffer Full! dropping data. "
-               "current_size =%u capacity=%u incoming=%u\n",
-               this->bcb
-                   ->current_size,
-               this->bcb->buffer_size, msg_size);
-        return;
+        uint16_t space = BCBAvailableSize(this->bcb);
+        if (space == 0)
+        {
+            printf("Ring Buffer Full! dropping incoming data =%u\n", remaining);
+            return;
+        }
+        uint16_t to_write = (remaining < space) ? remaining : space;
+        uint16_t written = BCBWrite(this->bcb, ptr, to_write);
+        if (written == 0)
+        {
+            printf("BCBwrite failed unexpectedly\n");
+        }
+        ptr += written;
+        remaining -= written;
     }
+
     this->ProcessClientMsg(tcp_client);
+}
+
+bool TcpMsgDemarcar::CanAcceptMoreData()
+{
+    return BCBAvailableSize(this->bcb) > 0;
 }

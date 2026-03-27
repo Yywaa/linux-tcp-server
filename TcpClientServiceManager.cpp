@@ -7,6 +7,8 @@
 #include "TcpServerController.h"
 #include "TcpClientServiceManager.h"
 #include "TcpClient.h"
+#include "TcpMsgVariabSizeDemarcar.h"
+#include "ByteCircularBuffer.h"
 
 unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
 
@@ -47,23 +49,32 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
             // next_tcp_client = *(++it);
             if (FD_ISSET(tcp_client->comm_fd, &this->active_fd_set))
             {
-                rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, MAX_CLIENT_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
-                if (rcv_bytes == 0)
-                {
-                    /*from gpt*/
-                    printf("Client closed connection\n");
+                // rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, MAX_CLIENT_BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len);
 
-                    close(tcp_client->comm_fd);
-                    FD_CLR(tcp_client->comm_fd, &this->backup_fd_set);
-                    it = this->tcp_client_db.erase(it);
-                    continue;
-                    /*original*/
-                    /*
-                    printf("error = %dn", errno);
-                    sleep(1);*/
-                }
                 if (tcp_client->msgd)
                 {
+                    uint16_t space = BCBAvailableSize(tcp_client->msgd->bcb);
+                    if (space == 0)
+                    {
+                        printf("BackPressure: Buffer full, skip recv\n");
+                        next_tcp_client = *(++it);
+                        continue; // skip current tcp client;
+                    }
+                    rcv_bytes = recvfrom(tcp_client->comm_fd, client_recv_buffer, space, 0, (struct sockaddr *)&client_addr, &addr_len);
+                    if (rcv_bytes == 0)
+                    {
+                        /*from gpt*/
+                        printf("Client closed connection\n");
+
+                        close(tcp_client->comm_fd);
+                        FD_CLR(tcp_client->comm_fd, &this->backup_fd_set);
+                        it = this->tcp_client_db.erase(it);
+                        continue;
+                        /*original*/
+                        /*
+                        printf("error = %dn", errno);
+                        sleep(1);*/
+                    }
                     tcp_client->msgd->ProcessMsg(tcp_client, client_recv_buffer, rcv_bytes);
                 }
                 else if (this->tcp_ctrlr->client_msg_recvd)
