@@ -9,6 +9,7 @@
 #include "TcpClient.h"
 #include "TcpMsgVariabSizeDemarcar.h"
 #include "ByteCircularBuffer.h"
+#include "TcpNewConnectionAcceptor.h"
 
 unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
 
@@ -19,9 +20,6 @@ TcpClientServiceManager::TcpClientServiceManager(TcpServerController *tcp_ctrlr)
     FD_ZERO(&this->active_fd_set);
     FD_ZERO(&this->backup_fd_set);
     this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
-    pthread_mutex_init(&ready_mutex, NULL);
-    pthread_cond_init(&ready_cond, NULL);
-    is_ready = false;
 }
 
 TcpClientServiceManager::~TcpClientServiceManager()
@@ -33,19 +31,36 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
     // create epoll
     this->epfd = epoll_create1(0);
     struct epoll_event ev, events[64];
-    // notify accept thread, service thread is ready
-    pthread_mutex_lock(&ready_mutex);
-    is_ready = true;
-    printf("Service: epoll ready\n");
-    pthread_cond_signal(&ready_cond);
-    pthread_mutex_unlock(&ready_mutex);
+
+    // move bind listen to service thread here
+    int opt = 1;
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(this->tcp_ctrlr->port_no);
+    server_addr.sin_addr.s_addr = htonl(this->tcp_ctrlr->ip_addr);
+    int listen_fd = this->tcp_ctrlr->GetNewAccptionManager()->GetAcceptFd();
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
+    bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    listen(listen_fd, 5);
+
+    // non-blocking
+    int flags = fcntl(listen_fd, F_GETFL, 0);
+    fcntl(listen_fd, F_SETFL, flags | O_NONBLOCK);
+    // reactor below
+
+    ev.events = EPOLLIN;
+    ev.data.fd = listen_fd;
+
+    epoll_ctl(this->epfd, EPOLL_CTL_ADD, listen_fd, &ev);
+    // reactor abolve
 
     /*Invoke select system call on all Clients present in Client DB*/
     int rcv_bytes;
     TcpClient *tcp_client, *next_tcp_client;
     struct sockaddr_in client_addr;
     std::list<TcpClient *>::iterator it;
-    socklen_t addr_len = sizeof(client_addr);
 
     this->max_fd = this->GetMaxFd();
 
@@ -68,6 +83,46 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
         for (int i = 0; i < nfds; i++)
         {
             int fd = events[i].data.fd;
+            if (fd == listen_fd)
+            {
+                while (1)
+                {
+                    socklen_t addr_len = sizeof(client_addr);
+                    int client_fd = accept(listen_fd, (struct sockaddr *)&client_addr, &addr_len);
+                    if (client_fd < 0)
+                    {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        {
+                            break;
+                        }
+                        perror("accept error");
+                        break;
+                    }
+                    // set non-blocking
+                    int flags = fcntl(client_fd, F_GETFL, 0);
+                    fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+
+                    // create tcp client
+                    TcpClient *tcp_client = new TcpClient(client_addr.sin_addr.s_addr, client_addr.sin_port);
+                    tcp_client->comm_fd = client_fd;
+                    tcp_client->tcp_ctrlr = this->tcp_ctrlr;
+#if FIX_SZIE_DEMAR
+                    tcp_client->msgd = new TcpMsgFixedSizeDemarcar(27);
+#else
+                    tcp_client->msgd = new TcpMsgVariabSizeDemarcar();
+#endif
+                    // add tcp client ot DB
+                    this->AddClientToDB(tcp_client);
+                    // add to epoll
+                    struct epoll_event client_ev;
+                    client_ev.events = EPOLLIN;
+                    client_ev.data.fd = client_fd;
+                    epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_fd, &client_ev);
+                    printf("New client accepted [%d]\n", client_fd);
+                }
+                continue;
+            }
+
             TcpClient *tcp_client = this->GetClientByFd(fd);
             if (!tcp_client)
             {
@@ -83,7 +138,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                     break;
                 }
 
-                rcv_bytes = recv(tcp_client->comm_fd, client_recv_buffer, space, 0);
+                rcv_bytes = recv(fd, client_recv_buffer, space, 0);
                 if (rcv_bytes > 0)
                 {
                     tcp_client->msgd->ProcessMsg(tcp_client, client_recv_buffer, rcv_bytes);
@@ -92,8 +147,12 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                 {
                     printf("Client closed connection\n");
                     close(tcp_client->comm_fd);
-                    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+                    if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) < 0)
+                    {
+                        perror("epolll_ctl");
+                    }
                     RemoveClient(tcp_client);
+                    tcp_client = nullptr;
                     break;
                 }
                 else
@@ -102,7 +161,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                     {
                         break;
                     }
-                    perror("recv error\n");
+                    perror("recv error");
                     close(fd);
                     epoll_ctl(this->epfd, EPOLL_CTL_DEL, fd, NULL);
                     RemoveClient(tcp_client);
@@ -263,16 +322,6 @@ void TcpClientServiceManager::AddClientToEpoll(TcpClient *client)
     ev.data.fd = client->comm_fd;
 
     epoll_ctl(this->epfd, EPOLL_CTL_ADD, client->comm_fd, &ev);
-}
-
-void TcpClientServiceManager::WaitUntilReady()
-{
-    pthread_mutex_lock(&ready_mutex);
-    while (!is_ready)
-    {
-        pthread_cond_wait(&ready_cond, &ready_mutex);
-    }
-    pthread_mutex_unlock(&ready_mutex);
 }
 
 void TcpClientServiceManager::RemoveClient(TcpClient *client)

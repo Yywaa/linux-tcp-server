@@ -7,6 +7,7 @@
 
 #define EPOLL 1
 class TcpClient;
+class TcpNewConnectionAcceptor;
 
 class TcpClientServiceManager
 {
@@ -19,9 +20,11 @@ public:
     std::list<TcpClient *> tcp_client_db;
     int GetMaxFd();
     void CopyClientFDtoFDSet(fd_set *fdset);
+
+    /*
     pthread_mutex_t ready_mutex;
     pthread_cond_t ready_cond;
-    bool is_ready;
+    bool is_ready;*/
 
 public:
     TcpServerController *tcp_ctrlr;
@@ -35,7 +38,7 @@ public:
     void Stop();
     TcpClient *GetClientByFd(int fd);
     void AddClientToEpoll(TcpClient *client);
-    void WaitUntilReady();
+    // void WaitUntilReady();
     void RemoveClient(TcpClient *client);
 };
 

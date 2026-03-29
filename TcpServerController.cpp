@@ -35,7 +35,7 @@ void TcpServerController::Start()
     Start the DRS threa
     initialize the DBMS*/
   this->tcp_client_svc_mgr->StartTcpClientServiceManagerThread(); // Service thread start first,but not enough,pthead_cond needed
-  this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
+  // this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
 
   this->tcp_client_db_mgr->StartTcpClientDbMgrInit();
   this->SetBit(TCP_SERVER_RUNNING);
@@ -148,7 +148,7 @@ void TcpServerController::StartConectionAcceptionSvc()
   }
   this->UnSetBit(TCP_SERVER_NOT_ACCEPTING_NEW_CONNECTIONS);
   this->tcp_new_conn_acc = new TcpNewConnectionAcceptor(this);
-  this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
+  // this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
 }
 void TcpServerController::StopConnectionAcceptingSvc()
 {
@@ -230,3 +230,8 @@ TcpClientServiceManager *TcpServerController::GetClientServiceManger()
 {
   return this->tcp_client_svc_mgr;
 }
+
+TcpNewConnectionAcceptor *TcpServerController::GetNewAccptionManager()
+{
+  return this->tcp_new_conn_acc;
+};

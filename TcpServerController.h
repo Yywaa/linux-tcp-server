@@ -58,6 +58,7 @@ public:
     void CopyAllClientsTolist(std::list<TcpClient *> *list);
     void CreateActiveAClient(uint32_t server_ip_addr, uint16_t server_port_no);
     TcpClientServiceManager *GetClientServiceManger();
+    TcpNewConnectionAcceptor *GetNewAccptionManager();
 };
 
 #endif

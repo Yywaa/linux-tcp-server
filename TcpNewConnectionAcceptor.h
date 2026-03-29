@@ -8,7 +8,7 @@ class TcpServerController;
 class TcpNewConnectionAcceptor;
 class TcpClientServiceManager;
 class TcpClient;
-
+#define FIX_SIZE_DEMAR 0
 /*New connection are accepted by using 'accept()'syscall
   We need to create a 'accept_fd'using socket()
 */
@@ -29,6 +29,7 @@ public:
 
     void Stop();
     void StopTcpNewConnectionAcceptorThread();
+    int GetAcceptFd();
 };
 
 #endif
