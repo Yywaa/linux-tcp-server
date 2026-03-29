@@ -34,8 +34,9 @@ void TcpServerController::Start()
   /*Start CRS thread
     Start the DRS threa
     initialize the DBMS*/
+  this->tcp_client_svc_mgr->StartTcpClientServiceManagerThread(); // Service thread start first,but not enough,pthead_cond needed
   this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
-  this->tcp_client_svc_mgr->StartTcpClientServiceManagerThread();
+
   this->tcp_client_db_mgr->StartTcpClientDbMgrInit();
   this->SetBit(TCP_SERVER_RUNNING);
 
@@ -47,6 +48,7 @@ void TcpServerController::ProcessNewClient(TcpClient *tcp_client)
   this->tcp_client_db_mgr->AddClienttoDb(tcp_client);
   tcp_client->SetState(TCP_CLIENT_STATE_MULTIPLEX_LISTEN);
   this->tcp_client_svc_mgr->ClientFDStartListen(tcp_client);
+  this->tcp_client_svc_mgr->AddClientToEpoll(tcp_client);
 }
 
 void TcpServerController::SetServerNotifCallbacks(void (*client_connected)(const TcpServerController *, const TcpClient *),
@@ -222,4 +224,9 @@ void TcpServerController::CreateActiveAClient(uint32_t server_ip_addr, uint16_t 
   }
 
   this->tcp_client_db_mgr->AddClienttoDb(tcp_client);
+}
+
+TcpClientServiceManager *TcpServerController::GetClientServiceManger()
+{
+  return this->tcp_client_svc_mgr;
 }

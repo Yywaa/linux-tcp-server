@@ -44,7 +44,7 @@ void TcpMsgVariabSizeDemarcar::ProcessClientMsg(TcpClient *tcp_client)
 
         uint16_t bytes_read = BCBRead(this->bcb, this->buffer, msg_len, true);
         this->buffer[bytes_read] = '\0';
-        usleep(5000);
+        
         tcp_client->tcp_ctrlr->client_msg_recvd(tcp_client->tcp_ctrlr, tcp_client, this->buffer, bytes_read);
     }
 }

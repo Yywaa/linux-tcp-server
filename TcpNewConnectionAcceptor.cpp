@@ -9,6 +9,8 @@
 #include "TcpClient.h"
 #include "TcpMsgDemarcar.h"
 #include "TcpMsgFixedSizeDemarcar.h"
+#include "TcpMsgVariabSizeDemarcar.h"
+#include "TcpClientServiceManager.h"
 
 #define FIX_SIZE_DEMAR 0
 
@@ -35,6 +37,9 @@ TcpNewConnectionAcceptor::~TcpNewConnectionAcceptor()
 */
 void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
 {
+    printf("Acceptor waiting for service ready...\n");
+    this->tcp_ctrlr->GetClientServiceManger()->WaitUntilReady();
+    printf("Acceptor service ready, continue...\n");
     int opt = 1;
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
@@ -62,6 +67,8 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         printf("listen failed\n");
         exit(0);
     }
+    int flags = fcntl(this->accept_fd, F_GETFL, 0);
+    fcntl(this->accept_fd, F_SETFL, flags | O_NONBLOCK);
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
     int comm_sock_fd;
@@ -71,9 +78,16 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
         comm_sock_fd = accept(this->accept_fd, (struct sockaddr *)&client_addr, &addr_len);
         if (comm_sock_fd < 0)
         {
-            printf("Error Accepting New Connection\n");
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                continue;
+            }
+            // printf("Error Accepting New Connection\n");
+            perror("accept\n");
             continue;
         }
+        int flags = fcntl(comm_sock_fd, F_GETFL, 0);
+        fcntl(comm_sock_fd, F_SETFL, flags | O_NONBLOCK);
         TcpClient *tcp_client = new TcpClient(client_addr.sin_addr.s_addr, client_addr.sin_port);
         tcp_client->server_ip_addr = this->tcp_ctrlr->ip_addr;
         tcp_client->server_port_no = this->tcp_ctrlr->port_no;
@@ -95,6 +109,7 @@ void TcpNewConnectionAcceptor::StartTcpConnectionAcceptorThreadInternal()
 
         /*Tell the TCP Controller to further process the Client*/
         this->tcp_ctrlr->ProcessNewClient(tcp_client);
+        // this->tcp_ctrlr->client_msg_recvd->add
 
         printf("Connection Acceptted from Client[%s,%d]\n", network_convert_ip_n_to_p(htonl(client_addr.sin_addr.s_addr), 0),
                htons(client_addr.sin_port));

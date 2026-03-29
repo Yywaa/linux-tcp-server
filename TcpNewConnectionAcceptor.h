@@ -3,10 +3,11 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include "TcpMsgVariabSizeDemarcar.h"
-
+#include <fcntl.h>
 class TcpServerController;
 class TcpNewConnectionAcceptor;
+class TcpClientServiceManager;
+class TcpClient;
 
 /*New connection are accepted by using 'accept()'syscall
   We need to create a 'accept_fd'using socket()

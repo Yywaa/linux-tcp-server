@@ -19,6 +19,9 @@ TcpClientServiceManager::TcpClientServiceManager(TcpServerController *tcp_ctrlr)
     FD_ZERO(&this->active_fd_set);
     FD_ZERO(&this->backup_fd_set);
     this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
+    pthread_mutex_init(&ready_mutex, NULL);
+    pthread_cond_init(&ready_cond, NULL);
+    is_ready = false;
 }
 
 TcpClientServiceManager::~TcpClientServiceManager()
@@ -27,6 +30,16 @@ TcpClientServiceManager::~TcpClientServiceManager()
 
 void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 {
+    // create epoll
+    this->epfd = epoll_create1(0);
+    struct epoll_event ev, events[64];
+    // notify accept thread, service thread is ready
+    pthread_mutex_lock(&ready_mutex);
+    is_ready = true;
+    printf("Service: epoll ready\n");
+    pthread_cond_signal(&ready_cond);
+    pthread_mutex_unlock(&ready_mutex);
+
     /*Invoke select system call on all Clients present in Client DB*/
     int rcv_bytes;
     TcpClient *tcp_client, *next_tcp_client;
@@ -36,11 +49,69 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 
     this->max_fd = this->GetMaxFd();
 
+#if EPOLL
+    for (auto tcp_client : this->tcp_client_db)
+    {
+        ev.events = EPOLLIN;
+        ev.data.fd = tcp_client->comm_fd;
+        epoll_ctl(epfd, EPOLL_CTL_ADD, tcp_client->comm_fd, &ev);
+    }
+#elif
     FD_ZERO(&this->backup_fd_set);
     this->CopyClientFDtoFDSet(&this->backup_fd_set);
+#endif
 
     while (true)
     {
+#if EPOLL
+        int nfds = epoll_wait(epfd, events, 64, -1);
+        for (int i = 0; i < nfds; i++)
+        {
+            int fd = events[i].data.fd;
+            TcpClient *tcp_client = this->GetClientByFd(fd);
+            if (!tcp_client)
+            {
+                continue;
+            }
+
+            while (1)
+            {
+                uint16_t space = BCBAvailableSize(tcp_client->msgd->bcb);
+                if (space == 0)
+                {
+                    printf("BackPressure: Buffer full, skip recv\n");
+                    break;
+                }
+
+                rcv_bytes = recv(tcp_client->comm_fd, client_recv_buffer, space, 0);
+                if (rcv_bytes > 0)
+                {
+                    tcp_client->msgd->ProcessMsg(tcp_client, client_recv_buffer, rcv_bytes);
+                }
+                else if (rcv_bytes == 0)
+                {
+                    printf("Client closed connection\n");
+                    close(tcp_client->comm_fd);
+                    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+                    RemoveClient(tcp_client);
+                    break;
+                }
+                else
+                {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    {
+                        break;
+                    }
+                    perror("recv error\n");
+                    close(fd);
+                    epoll_ctl(this->epfd, EPOLL_CTL_DEL, fd, NULL);
+                    RemoveClient(tcp_client);
+                    break;
+                }
+            }
+        }
+
+#elif
         memcpy(&this->active_fd_set, &this->backup_fd_set, sizeof(fd_set));
         select(this->max_fd + 1, &this->active_fd_set, 0, 0, 0);
 
@@ -84,6 +155,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
             }
             next_tcp_client = *(++it);
         }
+#endif
     }
 }
 
@@ -152,8 +224,8 @@ void TcpClientServiceManager::ClientFDStartListen(TcpClient *tcp_client)
 
     this->AddClientToDB(tcp_client);
 
-    this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
-    this->StartTcpClientServiceManagerThread();
+    // this->client_svc_mgr_thread = (pthread_t *)calloc(1, sizeof(pthread_t));
+    // this->StartTcpClientServiceManagerThread();
 }
 
 void TcpClientServiceManager::Stop()
@@ -170,4 +242,41 @@ void TcpClientServiceManager::Stop()
         this->tcp_client_db.remove(tcp_client);
     }
     delete this;
+}
+
+TcpClient *TcpClientServiceManager::GetClientByFd(int fd)
+{
+    for (auto c : this->tcp_client_db)
+    {
+        if (c->comm_fd == fd)
+        {
+            return c;
+        }
+    }
+    return nullptr;
+}
+
+void TcpClientServiceManager::AddClientToEpoll(TcpClient *client)
+{
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = client->comm_fd;
+
+    epoll_ctl(this->epfd, EPOLL_CTL_ADD, client->comm_fd, &ev);
+}
+
+void TcpClientServiceManager::WaitUntilReady()
+{
+    pthread_mutex_lock(&ready_mutex);
+    while (!is_ready)
+    {
+        pthread_cond_wait(&ready_cond, &ready_mutex);
+    }
+    pthread_mutex_unlock(&ready_mutex);
+}
+
+void TcpClientServiceManager::RemoveClient(TcpClient *client)
+{
+    this->tcp_client_db.remove(client);
+    delete client;
 }
