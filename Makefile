@@ -13,7 +13,8 @@ OBJS=TcpClientDBManager.o 		 		\
 			TcpMsgDemarcar.o				\
 			ByteCircularBuffer.o			\
 			TcpMsgFixedSizeDemarcar.o		\
-			TcpMsgVariabSizeDemarcar.o
+			TcpMsgVariabSizeDemarcar.o		\
+			TcpWorker.o
 
 testapp.exe:testapp.o ${OBJS} CommandParser/libcli.a
 	${CC} ${CFLAGS} ${OBJS} testapp.o -o testapp.exe ${LIBS}
@@ -47,8 +48,12 @@ TcpMsgDemarcar.o:TcpMsgDemarcar.cpp
 
 TcpMsgFixedSizeDemarcar.o:TcpMsgFixedSizeDemarcar.cpp
 	${CC} ${CFLAGS} -c TcpMsgFixedSizeDemarcar.cpp -o TcpMsgFixedSizeDemarcar.o
+
 TcpMsgVariabSizeDemarcar.o:TcpMsgVariabSizeDemarcar.cpp
 	${CC} ${CFLAGS} -c TcpMsgVariabSizeDemarcar.cpp -o TcpMsgVariabSizeDemarcar.o
+
+TcpWorker.o : TcpWorker.cpp
+	${CC} ${CFLAGS} -c TcpWorker.cpp -o TcpWorker.o
 
 CommandParser/libcli.a:
 	(cd CommandParser;make)

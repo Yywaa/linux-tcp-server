@@ -9,6 +9,7 @@
 #include "TcpNewConnectionAcceptor.h"
 #include "TcpClientServiceManager.h"
 #include "network_utils.h"
+#include "TcpWorker.h"
 
 TcpServerController::TcpServerController(std::string ip_addr, uint16_t port_no, std::string name)
 {
@@ -20,6 +21,7 @@ TcpServerController::TcpServerController(std::string ip_addr, uint16_t port_no, 
   this->tcp_client_svc_mgr = new TcpClientServiceManager(this);
 
   this->SetBit(TCP_SERVER_INITIALIZED);
+  next_worker = 0;
 }
 TcpServerController::~TcpServerController()
 {
@@ -34,6 +36,13 @@ void TcpServerController::Start()
   /*Start CRS thread
     Start the DRS threa
     initialize the DBMS*/
+
+  for (int i = 0; i < WORKER_COUNT; i++)
+  {
+    workers[i] = new TcpWorker(this);
+    workers[i]->Start();
+    printf("No.%d worker started\n", i);
+  }
   this->tcp_client_svc_mgr->StartTcpClientServiceManagerThread(); // Service thread start first,but not enough,pthead_cond needed
   // this->tcp_new_conn_acc->StartTcpConnectionAcceptorThread();
 
@@ -47,8 +56,8 @@ void TcpServerController::ProcessNewClient(TcpClient *tcp_client)
 {
   this->tcp_client_db_mgr->AddClienttoDb(tcp_client);
   tcp_client->SetState(TCP_CLIENT_STATE_MULTIPLEX_LISTEN);
-  this->tcp_client_svc_mgr->ClientFDStartListen(tcp_client);
-  this->tcp_client_svc_mgr->AddClientToEpoll(tcp_client);
+  // this->tcp_client_svc_mgr->ClientFDStartListen(tcp_client);
+  // this->tcp_client_svc_mgr->workers(tcp_client);
 }
 
 void TcpServerController::SetServerNotifCallbacks(void (*client_connected)(const TcpServerController *, const TcpClient *),
@@ -235,3 +244,15 @@ TcpNewConnectionAcceptor *TcpServerController::GetNewAccptionManager()
 {
   return this->tcp_new_conn_acc;
 };
+
+TcpWorker *TcpServerController::GetWorker(int idx)
+{
+  return workers[idx];
+}
+
+TcpWorker *TcpServerController::GetNextWorker()
+{
+  TcpWorker *worker = workers[next_worker];
+  next_worker = (next_worker + 1) % WORKER_COUNT;
+  return worker;
+}

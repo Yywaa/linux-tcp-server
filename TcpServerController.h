@@ -13,11 +13,13 @@
 #define TCP_SERVER_NOT_ACCEPTING_NEW_CONNECTIONS (4)
 #define TCP_SERVER_NOT_LISTENING_CLIENTS (8)
 #define TCP_SERVER_CREATE_MULTI_THREAD_CLIENT (16)
+#define WORKER_COUNT 4
 
 class TcpNewConnectionAcceptor;
 class TcpClientServiceManager;
 class TcpClientDbManager;
 class TcpClient;
+class TcpWorker;
 
 class TcpServerController
 {
@@ -26,6 +28,8 @@ private:
     TcpClientDbManager *tcp_client_db_mgr;
     TcpClientServiceManager *tcp_client_svc_mgr;
     uint32_t state_flags = 0;
+    TcpWorker *workers[WORKER_COUNT];
+    int next_worker = 0;
 
 public:
     uint32_t ip_addr;
@@ -59,6 +63,8 @@ public:
     void CreateActiveAClient(uint32_t server_ip_addr, uint16_t server_port_no);
     TcpClientServiceManager *GetClientServiceManger();
     TcpNewConnectionAcceptor *GetNewAccptionManager();
+    TcpWorker *GetWorker(int idx);
+    TcpWorker *GetNextWorker();
 };
 
 #endif

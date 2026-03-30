@@ -3,11 +3,11 @@
 
 // class TcpServerController;
 #include "TcpServerController.h"
-#include <sys/epoll.h>
 
 #define EPOLL 1
 class TcpClient;
 class TcpNewConnectionAcceptor;
+class TcpWorker;
 
 class TcpClientServiceManager
 {

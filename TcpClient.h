@@ -23,6 +23,8 @@ class TcpServerController;
 class TcpMsgDemarcar;
 
 #define MAX_CLIENT_BUFFER_SIZE 8192
+
+extern unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
 class TcpClient
 {
 private:

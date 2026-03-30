@@ -1,5 +1,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/epoll.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <unistd.h>
@@ -10,8 +11,7 @@
 #include "TcpMsgVariabSizeDemarcar.h"
 #include "ByteCircularBuffer.h"
 #include "TcpNewConnectionAcceptor.h"
-
-unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
+#include "TcpWorker.h"
 
 TcpClientServiceManager::TcpClientServiceManager(TcpServerController *tcp_ctrlr)
 {
@@ -28,6 +28,7 @@ TcpClientServiceManager::~TcpClientServiceManager()
 
 void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 {
+    unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
     // create epoll
     this->epfd = epoll_create1(0);
     struct epoll_event ev, events[64];
@@ -112,63 +113,23 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                     tcp_client->msgd = new TcpMsgVariabSizeDemarcar();
 #endif
                     // add tcp client ot DB
-                    this->AddClientToDB(tcp_client);
+                    // this->AddClientToDB(tcp_client);
                     // add to epoll
                     struct epoll_event client_ev;
                     client_ev.events = EPOLLIN;
                     client_ev.data.fd = client_fd;
-                    epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_fd, &client_ev);
+                    // epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_fd, &client_ev);
+                    TcpWorker *worker = this->tcp_ctrlr->GetNextWorker();
+                    worker->AddClient(tcp_client);
+
                     printf("New client accepted [%d]\n", client_fd);
+                    printf("New client -> worker\n");
                 }
                 continue;
-            }
-
-            TcpClient *tcp_client = this->GetClientByFd(fd);
-            if (!tcp_client)
-            {
-                continue;
-            }
-
-            while (1)
-            {
-                uint16_t space = BCBAvailableSize(tcp_client->msgd->bcb);
-                if (space == 0)
-                {
-                    printf("BackPressure: Buffer full, skip recv\n");
-                    break;
-                }
-
-                rcv_bytes = recv(fd, client_recv_buffer, space, 0);
-                if (rcv_bytes > 0)
-                {
-                    tcp_client->msgd->ProcessMsg(tcp_client, client_recv_buffer, rcv_bytes);
-                }
-                else if (rcv_bytes == 0)
-                {
-                    printf("Client closed connection\n");
-                    close(tcp_client->comm_fd);
-                    if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) < 0)
-                    {
-                        perror("epolll_ctl");
-                    }
-                    RemoveClient(tcp_client);
-                    tcp_client = nullptr;
-                    break;
-                }
-                else
-                {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK)
-                    {
-                        break;
-                    }
-                    perror("recv error");
-                    close(fd);
-                    epoll_ctl(this->epfd, EPOLL_CTL_DEL, fd, NULL);
-                    RemoveClient(tcp_client);
-                    break;
-                }
             }
         }
+    }
+}
 
 #elif
         memcpy(&this->active_fd_set, &this->backup_fd_set, sizeof(fd_set));
@@ -215,8 +176,6 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
             next_tcp_client = *(++it);
         }
 #endif
-    }
-}
 
 void *tcp_client_svc_manager_thread_fn(void *arg)
 {
