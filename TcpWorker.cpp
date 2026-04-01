@@ -5,8 +5,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-TcpWorker::TcpWorker(TcpServerController *ctrl)
+TcpWorker::TcpWorker(TcpServerController *ctrl, int id)
 {
+    this->worker_id = id;
     this->Tcp_ctrl = ctrl;
 }
 
@@ -18,6 +19,7 @@ void TcpWorker::Start()
 
 void TcpWorker::AddClient(TcpClient *client)
 {
+    printf("[Worker %d] New client fd=%d assigned\n", this->worker_id, client->comm_fd);
     struct epoll_event ev;
     ev.events = EPOLLIN;
     ev.data.fd = client->comm_fd;
@@ -65,6 +67,11 @@ void *TcpWorker::WorkerThreadFn(void *arg)
                     break;
                 }
                 int bytes = recv(fd, client_recv_buffer, space, 0);
+                pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+                pthread_mutex_lock(&log_mutex);
+                printf("[Worker %d] recv %d bytes from fd %d\n", worker->worker_id, bytes, fd);
+                printf("[Worker %d | Thread %p] recv %d bytes from fd %d\n", worker->worker_id, (void *)pthread_self(), bytes, fd); // worker 0 worker1 will disrupt printf, printf is not atomic
+                pthread_mutex_unlock(&log_mutex);
                 if (bytes > 0)
                 {
                     client->msgd->ProcessMsg(client, client_recv_buffer, bytes);

@@ -39,7 +39,7 @@ void TcpServerController::Start()
 
   for (int i = 0; i < WORKER_COUNT; i++)
   {
-    workers[i] = new TcpWorker(this);
+    workers[i] = new TcpWorker(this, i);
     workers[i]->Start();
     printf("No.%d worker started\n", i);
   }

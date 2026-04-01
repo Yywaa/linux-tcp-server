@@ -11,8 +11,9 @@ class TcpServerController;
 class TcpWorker
 {
 public:
-    TcpWorker(TcpServerController *ctrl);
+    TcpWorker(TcpServerController *ctrl, int id);
 
+    int worker_id; // id of each worker
     int epfd;
     pthread_t thread;
     std::list<TcpClient *> clients;

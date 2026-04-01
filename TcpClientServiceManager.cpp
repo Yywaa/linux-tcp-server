@@ -120,6 +120,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
                     client_ev.data.fd = client_fd;
                     // epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_fd, &client_ev);
                     TcpWorker *worker = this->tcp_ctrlr->GetNextWorker();
+                    printf("Assign fd=%d to worker %d\n", client_fd, worker->worker_id);
                     worker->AddClient(tcp_client);
 
                     printf("New client accepted [%d]\n", client_fd);

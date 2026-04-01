@@ -231,7 +231,7 @@ static void appln_client_msg_recvd(const TcpServerController *tcp_server, const 
     // printf("first printf msg: %s\n", msg);
     // fwrite(msg, 1, msg_size, stdout);
 
-    printf("%s() Bytes recved: %d msg:%s \n", __FUNCTION__, msg_size, msg);
+    printf("%s() Bytes recved: %d,  msg:%s \n", __FUNCTION__, msg_size, msg);
     // printf("Bytes recved: %d\n", msg_size);
 
     /*
