@@ -4,6 +4,9 @@
 #include "ByteCircularBuffer.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <chrono>
+
+#define FD_MAP_TEST 1
 
 TcpWorker::TcpWorker(TcpServerController *ctrl, int id)
 {
@@ -26,7 +29,12 @@ void TcpWorker::AddClient(TcpClient *client)
 
     epoll_ctl(this->epfd, EPOLL_CTL_ADD, client->comm_fd, &ev);
 
+#if FD_MAP_TEST
+    fd_map[client->comm_fd] = client;
+#elif
     clients.push_back(client);
+
+#endif
 }
 
 void *TcpWorker::WorkerThreadFn(void *arg)
@@ -46,6 +54,20 @@ void *TcpWorker::WorkerThreadFn(void *arg)
             TcpClient *client = nullptr;
 
             // search client
+#if FD_MAP_TEST
+            auto start = std::chrono::high_resolution_clock::now();
+            auto it = worker->fd_map.find(fd);
+            if (it == worker->fd_map.end())
+            {
+                continue;
+            }
+            client = it->second;
+            auto end = std::chrono::high_resolution_clock::now();
+            auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            printf("lookup cost =%d ns\n", ns);
+
+#else
+            auto start = std::chrono::high_resolution_clock::now();
             for (auto c : worker->clients)
             {
                 if (c->comm_fd == fd)
@@ -54,6 +76,11 @@ void *TcpWorker::WorkerThreadFn(void *arg)
                     break;
                 }
             }
+            auto end = std::chrono::high_resolution_clock::now();
+            auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            printf("lookup cost =%d ns\n", ns);
+#endif
+
             if (!client)
             {
                 continue;
@@ -67,11 +94,13 @@ void *TcpWorker::WorkerThreadFn(void *arg)
                     break;
                 }
                 int bytes = recv(fd, client_recv_buffer, space, 0);
-                pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-                pthread_mutex_lock(&log_mutex);
-                printf("[Worker %d] recv %d bytes from fd %d\n", worker->worker_id, bytes, fd);
-                printf("[Worker %d | Thread %p] recv %d bytes from fd %d\n", worker->worker_id, (void *)pthread_self(), bytes, fd); // worker 0 worker1 will disrupt printf, printf is not atomic
-                pthread_mutex_unlock(&log_mutex);
+                /*
+                                pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+                                pthread_mutex_lock(&log_mutex);
+                                // printf("[Worker %d] recv %d bytes from fd %d\n", worker->worker_id, bytes, fd);
+                                // printf("[Worker %d | Thread %p] recv %d bytes from fd %d\n", worker->worker_id, (void *)pthread_self(), bytes, fd); // worker 0 worker1 will disrupt printf, printf is not atomic
+                                pthread_mutex_unlock(&log_mutex);
+                */
                 if (bytes > 0)
                 {
                     client->msgd->ProcessMsg(client, client_recv_buffer, bytes);
@@ -96,8 +125,15 @@ void *TcpWorker::WorkerThreadFn(void *arg)
                     perror("recv error");
                     close(fd);
                     epoll_ctl(worker->epfd, EPOLL_CTL_DEL, fd, NULL);
+#if FD_MAP_TEST
+                    worker->fd_map.erase(fd);
+                    delete client;
+#elif
                     worker->clients.remove(client);
                     delete client;
+
+#endif
+
                     client = nullptr;
                     break;
                 }

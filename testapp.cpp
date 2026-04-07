@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include "CommandParser/libcli.h"
 #include "CommandParser/cmdtlv.h"
+#include <atomic>
 
 #define TCP_SERVER_CREATE 1
 #define TCP_SERVER_START 2
@@ -12,6 +13,9 @@
 #define TCP_SERVER_STOP_CLIENT_LISTEN 5
 #define TCP_SERVER_STOP 6
 #define TCP_SERVER_CONNECT_REMOTE 7
+
+std::atomic<uint64_t> g_msg_count{0};
+std::atomic<uint64_t> g_bytes{0};
 std::list<TcpServerController *> tcp_server_lst;
 
 static void appln_client_connected(const TcpServerController *tcp_server, const TcpClient *tcp_client);
@@ -224,6 +228,17 @@ static void appln_client_disconnected(const TcpServerController *tcp_server, con
     print_client(tcp_client);
 }
 
+void *stats_thread(void *)
+{
+    while (1)
+    {
+        /* code */
+        sleep(1);
+        uint64_t qps = g_msg_count.exchange(0);
+        uint64_t bps = g_bytes.exchange(0);
+        printf("[STATS] QPS = %lu, Thouhghput=%lu bytes/sec\n", qps, bps);
+    }
+}
 static void appln_client_msg_recvd(const TcpServerController *tcp_server, const TcpClient *tcp_client, unsigned char *msg, uint16_t msg_size)
 {
     (void)tcp_server;
@@ -231,16 +246,17 @@ static void appln_client_msg_recvd(const TcpServerController *tcp_server, const 
     // printf("first printf msg: %s\n", msg);
     // fwrite(msg, 1, msg_size, stdout);
 
-    printf("%s() Bytes recved: %d,  msg:%s \n", __FUNCTION__, msg_size, msg);
-    // printf("Bytes recved: %d\n", msg_size);
+    // printf("%s() Bytes recved: %d,  msg:%s \n", __FUNCTION__, msg_size, msg);
+    char buf[256];
+    int len = snprintf(buf, sizeof(buf),
+                       "%s() Bytes recved: %d, msg:%s\n",
+                       __FUNCTION__, msg_size, msg);
 
-    /*
-    for (int i = 0; i < msg_size; i++)
-    {
-        printf("%02X ", msg[i]);
-    }
-    printf("\n");
-    */
+    // write(STDOUT_FILENO, buf, len);
+
+    // printf("Bytes recved: %d\n", msg_size);
+    g_msg_count++;
+    g_bytes += msg_size;
 }
 static int show_tcp_server_handler(param_t *param, ser_buff_t *ser_buff, op_mode enable_disable)
 {
@@ -407,8 +423,11 @@ int main(int argc, char **argv)
 
     server1->Start();
     server1->SetServerNotifCallbacks(appln_client_connected, appln_client_disconnected, appln_client_msg_recvd);
+    pthread_t tid;
+    pthread_create(&tid, NULL, stats_thread, NULL);
     scanf("\n");
     server1->Display();
+
 // #endif
 #else if
     init_libcli();
