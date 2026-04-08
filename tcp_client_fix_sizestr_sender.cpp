@@ -92,7 +92,8 @@ void setup_tcp_communicatiom()
     int len1 = strlen(msg1);
     int len2 = strlen(msg2);
 
-    const char *msg = "This is fixed size demarcation";
+    const char *msg = "This is variable size demarcation test! I made it through trial and errors!\
+    This is variable size demarcation test! I made it through trial and errors!";
 
     while (1)
     {

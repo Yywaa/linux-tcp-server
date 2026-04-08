@@ -28,6 +28,7 @@ TcpClientServiceManager::~TcpClientServiceManager()
 
 void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
 {
+
     unsigned char client_recv_buffer[MAX_CLIENT_BUFFER_SIZE];
     // create epoll
     this->epfd = epoll_create1(0);
@@ -39,7 +40,13 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(this->tcp_ctrlr->port_no);
     server_addr.sin_addr.s_addr = htonl(this->tcp_ctrlr->ip_addr);
-    int listen_fd = this->tcp_ctrlr->GetNewAccptionManager()->GetAcceptFd();
+    // int listen_fd = this->tcp_ctrlr->GetNewAccptionManager()->GetAcceptFd();
+    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (listen_fd < 0)
+    {
+        perror("Socket");
+        exit(1);
+    }
     setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 
@@ -86,6 +93,7 @@ void TcpClientServiceManager::StartTcpClientServiceManagerThreadInternal()
             int fd = events[i].data.fd;
             if (fd == listen_fd)
             {
+                printf("EPOLL:listen_fd triggered\n");
                 while (1)
                 {
                     socklen_t addr_len = sizeof(client_addr);

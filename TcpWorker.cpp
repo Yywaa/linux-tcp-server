@@ -64,7 +64,7 @@ void *TcpWorker::WorkerThreadFn(void *arg)
             client = it->second;
             auto end = std::chrono::high_resolution_clock::now();
             auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-            printf("lookup cost =%d ns\n", ns);
+            // printf("lookup cost =%d ns\n", ns);
 
 #else
             auto start = std::chrono::high_resolution_clock::now();
