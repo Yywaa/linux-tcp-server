@@ -96,3 +96,12 @@ tags
 
 # ---- Explicitly keep Makefile ----
 !Makefile
+
+#---perf--data----
+perf.data
+out.perf
+*.folded
+*.svg
+
+#---FlameGraph--
+FlameGraph/
